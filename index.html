@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab Maya — Aturan Sinus</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    color: #fff;
+    width: 100vw; height: 100vh;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+
+  /* ── Header ── */
+  #header {
+    background: rgba(255,255,255,0.07);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255,255,255,0.12);
+    padding: 10px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  #header h1 { font-size: 18px; font-weight: 600; letter-spacing: .5px; }
+  #header h1 span { color: #a78bfa; }
+  .cp-badge {
+    font-size: 11px; color: #c4b5fd;
+    background: rgba(167,139,250,0.15);
+    border: 1px solid rgba(167,139,250,0.3);
+    border-radius: 20px; padding: 4px 12px;
+  }
+
+  /* ── Tab bar ── */
+  #tabs {
+    display: flex; gap: 4px;
+    padding: 8px 24px 0;
+    background: rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .tab {
+    padding: 8px 20px; border-radius: 8px 8px 0 0;
+    cursor: pointer; font-size: 13px; font-weight: 500;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-bottom: none;
+    color: rgba(255,255,255,0.5);
+    transition: all .2s;
+  }
+  .tab.active {
+    background: rgba(167,139,250,0.2);
+    border-color: rgba(167,139,250,0.4);
+    color: #c4b5fd;
+  }
+
+  /* ── Content area ── */
+  #content { flex: 1; display: flex; overflow: hidden; }
+  .panel { display: none; width: 100%; flex: 1; }
+  .panel.active { display: flex; }
+
+  /* ── Simulasi panel ── */
+  #panel-sim { flex-direction: row; gap: 0; }
+  #sim-left {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 12px 8px 8px;
+    position: relative;
+  }
+  #sim-right {
+    width: 290px; background: rgba(255,255,255,0.05);
+    border-left: 1px solid rgba(255,255,255,0.1);
+    display: flex; flex-direction: column;
+    padding: 14px 14px 10px;
+    gap: 10px; overflow-y: auto;
+  }
+
+  canvas#triCanvas {
+    border-radius: 12px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  /* ── Controls ── */
+  .ctrl-group { display: flex; flex-direction: column; gap: 4px; }
+  .ctrl-label {
+    font-size: 11px; font-weight: 600; color: #a78bfa;
+    text-transform: uppercase; letter-spacing: .5px;
+  }
+  .slider-row { display: flex; align-items: center; gap: 8px; }
+  .slider-row label { font-size: 12px; color: rgba(255,255,255,0.7); min-width: 16px; }
+  .slider-row input[type=range] {
+    flex: 1; height: 4px; cursor: pointer;
+    accent-color: #a78bfa;
+  }
+  .slider-row span { font-size: 12px; color: #c4b5fd; min-width: 34px; text-align: right; }
+
+  /* ── Rasio box ── */
+  #ratio-box {
+    background: rgba(167,139,250,0.1);
+    border: 1px solid rgba(167,139,250,0.25);
+    border-radius: 10px; padding: 10px 12px;
+  }
+  #ratio-box .ratio-title { font-size: 11px; color: #a78bfa; font-weight: 600; margin-bottom: 6px; }
+  .ratio-row {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 12px; margin-bottom: 3px;
+  }
+  .ratio-key { color: rgba(255,255,255,0.6); }
+  .ratio-val { color: #e2d9f3; font-weight: 600; }
+
+  /* ── Verify box ── */
+  #verify-box {
+    background: rgba(52,211,153,0.08);
+    border: 1px solid rgba(52,211,153,0.2);
+    border-radius: 10px; padding: 10px 12px;
+    font-size: 12px; line-height: 1.6;
+  }
+  #verify-box .vt { color: #6ee7b7; font-weight: 600; font-size: 11px; }
+
+  /* ── Rumus box ── */
+  #formula-box {
+    background: rgba(251,191,36,0.07);
+    border: 1px solid rgba(251,191,36,0.2);
+    border-radius: 10px; padding: 10px 12px;
+    text-align: center;
+  }
+  .formula-main {
+    font-size: 15px; color: #fde68a; font-weight: 700;
+    letter-spacing: .5px; font-family: 'Courier New', monospace;
+  }
+  .formula-sub { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+
+  /* ── Buttons ── */
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn {
+    flex: 1; padding: 7px 10px; border-radius: 8px; cursor: pointer;
+    font-size: 12px; font-weight: 600; border: none;
+    transition: all .15s; min-width: 70px;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #7c3aed, #a78bfa);
+    color: #fff;
+  }
+  .btn-primary:hover { opacity: .88; transform: translateY(-1px); }
+  .btn-secondary {
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.8);
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  .btn-secondary:hover { background: rgba(255,255,255,0.14); }
+  .btn-reset {
+    background: rgba(239,68,68,0.15);
+    color: #fca5a5;
+    border: 1px solid rgba(239,68,68,0.25);
+  }
+  .btn-reset:hover { background: rgba(239,68,68,0.25); }
+
+  /* ── Unknown box ── */
+  #unknown-box {
+    background: rgba(99,102,241,0.1);
+    border: 1px solid rgba(99,102,241,0.25);
+    border-radius: 10px; padding: 10px 12px;
+  }
+  #unknown-box .ut { font-size: 11px; color: #818cf8; font-weight: 600; margin-bottom: 6px; }
+  #unknown-result { font-size: 18px; font-weight: 700; color: #c7d2fe; text-align: center; }
+  #unknown-detail { font-size: 11px; color: rgba(255,255,255,0.5); text-align: center; margin-top: 3px; }
+
+  #mode-label { font-size: 11px; color: rgba(255,255,255,0.5); text-align: center; }
+
+  #sim-right::-webkit-scrollbar { width: 4px; }
+  #sim-right::-webkit-scrollbar-track { background: transparent; }
+  #sim-right::-webkit-scrollbar-thumb { background: rgba(167,139,250,0.3); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>⬡ Lab Maya — <span>Aturan Sinus</span></h1>
+  <div class="cp-badge">CP: Membuktikan &amp; Menerapkan Aturan Sinus</div>
+</div>
+
+<div id="tabs">
+  <div class="tab active" onclick="switchTab('sim',this)">🔬 Simulasi</div>
+</div>
+
+<div id="content">
+  <div id="panel-sim" class="panel active">
+    <div id="sim-left">
+      <canvas id="triCanvas"></canvas>
+    </div>
+
+    <div id="sim-right">
+
+      <div id="formula-box">
+        <div class="formula-main">a/sin A = b/sin B = c/sin C</div>
+        <div class="formula-sub">Perbandingan sisi &amp; sudut berlawanan selalu sama</div>
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-label">Sudut Segitiga</div>
+        <div class="slider-row">
+          <label style="color:#f87171">A</label>
+          <input type="range" id="sA" min="20" max="140" value="60" step="1" oninput="onSlider()">
+          <span id="vA">60°</span>
+        </div>
+        <div class="slider-row">
+          <label style="color:#4ade80">B</label>
+          <input type="range" id="sB" min="20" max="140" value="75" step="1" oninput="onSlider()">
+          <span id="vB">75°</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,0.6)">
+          <span style="min-width:16px;color:#60a5fa;font-weight:600">C</span>
+          <span style="flex:1;font-style:italic;padding-left:4px">= 180° − A − B</span>
+          <span id="vC" style="min-width:34px;text-align:right;color:#93c5fd;font-weight:600">45°</span>
+        </div>
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-label">Panjang Sisi Dasar (a)</div>
+        <div class="slider-row">
+          <label style="color:#f87171">a</label>
+          <input type="range" id="sideA" min="40" max="160" value="100" step="1" oninput="onSlider()">
+          <span id="vSideA">100</span>
+        </div>
+      </div>
+
+      <div id="ratio-box">
+        <div class="ratio-title">📐 Verifikasi: a/sin A = b/sin B = c/sin C</div>
+        <div class="ratio-row"><span class="ratio-key">a / sin A =</span><span class="ratio-val" id="r1">—</span></div>
+        <div class="ratio-row"><span class="ratio-key">b / sin B =</span><span class="ratio-val" id="r2">—</span></div>
+        <div class="ratio-row"><span class="ratio-key">c / sin C =</span><span class="ratio-val" id="r3">—</span></div>
+      </div>
+
+      <div id="verify-box">
+        <div class="vt">✔ Kesimpulan</div>
+        <div id="verify-text">Geser slider untuk melihat bahwa ketiga rasio <b>selalu bernilai sama</b> — itulah Aturan Sinus!</div>
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-label">🔍 Cari Sisi Tidak Diketahui</div>
+        <div id="unknown-box">
+          <div class="ut">Gunakan Aturan Sinus: b = a · sin B / sin A</div>
+          <div id="unknown-result">—</div>
+          <div id="unknown-detail">Geser slider untuk memperbarui</div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="playSuccess();animatePulse()">▶ Animasi</button>
+        <button class="btn btn-secondary" onclick="playClick();showRandomCase()">🎲 Acak</button>
+        <button class="btn btn-reset" onclick="playReset();resetAll()">↺ Reset</button>
+      </div>
+
+      <div id="mode-label">Geser slider untuk mengubah segitiga</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── Audio
+  let audioCtx;
+  function getAudioCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+  }
+  function playTone(freq=440, dur=0.15, type='sine', vol=0.12) {
+    try {
+      const ctx = getAudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = type; osc.frequency.value = freq;
+      gain.gain.setValueAtTime(vol, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+      osc.start(); osc.stop(ctx.currentTime + dur);
+    } catch(e) {}
+  }
+  function playClick() { playTone(660, 0.08, 'triangle', 0.1); }
+  function playSuccess() { [523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,0.12,'sine',0.1),i*80)); }
+  function playReset() { playTone(330, 0.2, 'sawtooth', 0.07); }
+
+  // ── State
+  const canvas = document.getElementById('triCanvas');
+  const ctx2d = canvas.getContext('2d');
+  let A=60, B=75, sideA=100;
+  let animRaf=null;
+
+  function computeTriangle() {
+    const C = 180 - A - B;
+    if (C <= 0) return null;
+    const Ar=A*Math.PI/180, Br=B*Math.PI/180, Cr=C*Math.PI/180;
+    const k = sideA / Math.sin(Ar);
+    const b = k * Math.sin(Br);
+    const c = k * Math.sin(Cr);
+    const W=canvas.width, H=canvas.height;
+    const cx=W/2, cy=H/2;
+    const P0={x:cx-c/2, y:cy+sideA*0.35};
+    const P1={x:cx+c/2, y:cy+sideA*0.35};
+    const P2={x:P0.x+b*Math.cos(Br), y:P0.y-b*Math.sin(Br)};
+    return {P0,P1,P2,a:sideA,b,c,A,B,C};
+  }
+
+  function draw(pulse=0) {
+    const W=canvas.width, H=canvas.height;
+    ctx2d.clearRect(0,0,W,H);
+    const T=computeTriangle();
+    if (!T) return;
+    const {P0,P1,P2,a,b,c,A:Av,B:Bv,C:Cv}=T;
+
+    // Grid
+    ctx2d.strokeStyle='rgba(255,255,255,0.04)'; ctx2d.lineWidth=1;
+    for(let x=0;x<W;x+=40){ctx2d.beginPath();ctx2d.moveTo(x,0);ctx2d.lineTo(x,H);ctx2d.stroke();}
+    for(let y=0;y<H;y+=40){ctx2d.beginPath();ctx2d.moveTo(0,y);ctx2d.lineTo(W,y);ctx2d.stroke();}
+
+    // Pulse glow
+    if(pulse>0){
+      const centX=(P0.x+P1.x+P2.x)/3, centY=(P0.y+P1.y+P2.y)/3;
+      const grad=ctx2d.createRadialGradient(centX,centY,0,centX,centY,180);
+      grad.addColorStop(0,`rgba(167,139,250,${0.18*pulse})`);
+      grad.addColorStop(1,'rgba(167,139,250,0)');
+      ctx2d.fillStyle=grad; ctx2d.fillRect(0,0,W,H);
+    }
+
+    // Fill
+    ctx2d.beginPath(); ctx2d.moveTo(P0.x,P0.y); ctx2d.lineTo(P1.x,P1.y); ctx2d.lineTo(P2.x,P2.y); ctx2d.closePath();
+    ctx2d.fillStyle='rgba(167,139,250,0.08)'; ctx2d.fill();
+
+    // Sides
+    function drawSide(p1,p2,label,color,val){
+      ctx2d.beginPath(); ctx2d.moveTo(p1.x,p1.y); ctx2d.lineTo(p2.x,p2.y);
+      ctx2d.strokeStyle=color; ctx2d.lineWidth=2.5; ctx2d.stroke();
+      const mx=(p1.x+p2.x)/2, my=(p1.y+p2.y)/2;
+      const dx=p2.x-p1.x, dy=p2.y-p1.y;
+      const len=Math.hypot(dx,dy); const nx=-dy/len*14, ny=dx/len*14;
+      ctx2d.font='bold 13px Segoe UI'; ctx2d.fillStyle=color;
+      ctx2d.textAlign='center'; ctx2d.textBaseline='middle';
+      ctx2d.fillText(`${label} = ${val.toFixed(1)}`,mx+nx,my+ny);
+    }
+    drawSide(P1,P2,'a','#f87171',a);
+    drawSide(P0,P2,'b','#4ade80',b);
+    drawSide(P0,P1,'c','#60a5fa',c);
+
+    // Angles
+    function drawAngle(p,p1,p2,label,color,deg){
+      const a1=Math.atan2(p1.y-p.y,p1.x-p.x);
+      const a2=Math.atan2(p2.y-p.y,p2.x-p.x);
+      const r=28;
+      ctx2d.beginPath(); ctx2d.arc(p.x,p.y,r,Math.min(a1,a2),Math.max(a1,a2));
+      ctx2d.strokeStyle=color; ctx2d.lineWidth=1.5; ctx2d.stroke();
+      const amid=(a1+a2)/2;
+      const lx=p.x+(r+14)*Math.cos(amid), ly=p.y+(r+14)*Math.sin(amid);
+      ctx2d.font='bold 13px Segoe UI'; ctx2d.fillStyle=color;
+      ctx2d.textAlign='center'; ctx2d.textBaseline='middle';
+      ctx2d.fillText(`${label}=${deg.toFixed(0)}°`,lx,ly);
+    }
+    drawAngle(P0,P1,P2,'B','#4ade80',Bv);
+    drawAngle(P1,P0,P2,'A','#f87171',Av);
+    drawAngle(P2,P0,P1,'C','#93c5fd',Cv);
+
+    // Vertices
+    [[P0],[P1],[P2]].forEach(([p])=>{
+      ctx2d.beginPath(); ctx2d.arc(p.x,p.y,6,0,Math.PI*2);
+      ctx2d.fillStyle='#a78bfa'; ctx2d.fill();
+      ctx2d.strokeStyle='#c4b5fd'; ctx2d.lineWidth=2; ctx2d.stroke();
+    });
+
+    // Altitude dashed
+    const denom=(P1.x-P0.x)**2+(P1.y-P0.y)**2;
+    const t2=((P2.x-P0.x)*(P1.x-P0.x)+(P2.y-P0.y)*(P1.y-P0.y))/denom;
+    const foot={x:P0.x+t2*(P1.x-P0.x), y:P0.y+t2*(P1.y-P0.y)};
+    ctx2d.setLineDash([4,4]);
+    ctx2d.beginPath(); ctx2d.moveTo(P2.x,P2.y); ctx2d.lineTo(foot.x,foot.y);
+    ctx2d.strokeStyle='rgba(251,191,36,0.4)'; ctx2d.lineWidth=1.5; ctx2d.stroke();
+    ctx2d.setLineDash([]);
+
+    updateStats(T);
+  }
+
+  function updateStats(T){
+    const {a,b,c,A:Av,B:Bv,C:Cv}=T;
+    const r1=a/Math.sin(Av*Math.PI/180);
+    const r2=b/Math.sin(Bv*Math.PI/180);
+    const r3=c/Math.sin(Cv*Math.PI/180);
+    document.getElementById('r1').textContent=r1.toFixed(2);
+    document.getElementById('r2').textContent=r2.toFixed(2);
+    document.getElementById('r3').textContent=r3.toFixed(2);
+    const ok=Math.abs(r1-r2)<0.1&&Math.abs(r2-r3)<0.1;
+    document.getElementById('verify-text').innerHTML=ok
+      ?`Ketiga rasio <b>sama (${r1.toFixed(2)})</b> — Aturan Sinus terbukti! ✓`
+      :'Rasio berbeda — coba ubah sudut agar C &gt; 0.';
+    document.getElementById('unknown-result').textContent='b = '+b.toFixed(2);
+    document.getElementById('unknown-detail').textContent=
+      `= ${a.toFixed(1)} × sin(${Bv.toFixed(0)}°) / sin(${Av.toFixed(0)}°)`;
+  }
+
+  function onSlider(){
+    A=+document.getElementById('sA').value;
+    B=+document.getElementById('sB').value;
+    sideA=+document.getElementById('sideA').value;
+    const maxB=170-A;
+    if(B>maxB){B=maxB;document.getElementById('sB').value=B;}
+    const C=180-A-B;
+    document.getElementById('vA').textContent=A+'°';
+    document.getElementById('vB').textContent=B+'°';
+    document.getElementById('vC').textContent=C+'°';
+    document.getElementById('vSideA').textContent=sideA;
+    playClick();
+    draw(0);
+  }
+
+  function resetAll(){
+    A=60;B=75;sideA=100;
+    document.getElementById('sA').value=60;
+    document.getElementById('sB').value=75;
+    document.getElementById('sideA').value=100;
+    document.getElementById('vA').textContent='60°';
+    document.getElementById('vB').textContent='75°';
+    document.getElementById('vC').textContent='45°';
+    document.getElementById('vSideA').textContent='100';
+    draw(0);
+  }
+
+  function showRandomCase(){
+    A=30+Math.floor(Math.random()*80);
+    const maxB2=170-A-10;
+    B=20+Math.floor(Math.random()*(maxB2-20));
+    sideA=50+Math.floor(Math.random()*110);
+    document.getElementById('sA').value=A;
+    document.getElementById('sB').value=B;
+    document.getElementById('sideA').value=sideA;
+    onSlider();
+  }
+
+  function animatePulse(){
+    if(animRaf) cancelAnimationFrame(animRaf);
+    let t=0;
+    function step(){
+      t+=0.04;
+      const pulse=Math.max(0,Math.sin(t)*0.5+0.5);
+      draw(pulse);
+      if(t<Math.PI*4) animRaf=requestAnimationFrame(step);
+      else draw(0);
+    }
+    animRaf=requestAnimationFrame(step);
+  }
+
+  function switchTab(id,el){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('panel-'+id).classList.add('active');
+    playClick();
+    setTimeout(()=>resizeCanvas(),10);
+  }
+
+  function resizeCanvas(){
+    const left=document.getElementById('sim-left');
+    canvas.width=Math.max(300,left.clientWidth-24);
+    canvas.height=Math.max(200,left.clientHeight-16);
+    draw(0);
+  }
+
+  window.addEventListener('resize',resizeCanvas);
+  window.addEventListener('load',()=>setTimeout(()=>{resizeCanvas();onSlider();},60));
+</script>
+</body>
+</html>
